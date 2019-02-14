@@ -1,3 +1,4 @@
+use rand::prelude::*;
 use std::error::Error;
 use std::fs;
 use std::io;
@@ -25,10 +26,12 @@ fn main() {
 
 fn get_words<'a>(contents: &'a String) -> Result<Vec<&'a str>, Box<dyn Error>> {
     let mut words = Vec::new();
+    let mut rng = rand::thread_rng();
 
     for line in contents.lines() {
         words.push(line);
     }
+    words.shuffle(&mut rng);
 
     Ok(words)
 }
@@ -45,13 +48,24 @@ fn run<'a>(words: Vec<&'a str>) -> Result<(), io::Error> {
         thread::sleep(one_second);
         seconds_left -= 1;
     }
-    println!("\rGo!                   ");
+    println!("\rGo!                      ");
     thread::sleep(one_second);
-
+    let timer = time::Instant::now();
+    let mut user_input = String::new();
     for word in words {
-        println!("{}", word);
-        thread::sleep(one_second);
+        println!("|{}|", word);
+        loop {
+            io::stdin().read_line(&mut user_input)?;
+            user_input = user_input[..user_input.len() - 2].to_string();
+            if user_input.eq(word) {
+                thread::sleep(time::Duration::from_millis(10));
+                user_input.clear();
+                break;
+            }
+            user_input.clear();
+        }
     }
+    println!("Time: {}", timer.elapsed().as_secs());
 
     Ok(())
 }
