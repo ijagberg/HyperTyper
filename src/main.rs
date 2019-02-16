@@ -1,5 +1,6 @@
 use rand::prelude::*;
 use std::collections::VecDeque;
+use std::env;
 use std::error::Error;
 use std::fs;
 use std::io;
@@ -8,13 +9,20 @@ use std::{thread, time};
 
 fn main() {
     // Handle command line stuff
-    start_game();
+    let args: Vec<_> = env::args().collect();
+    let difficulty = if args.len() > 1 {
+        args[1].parse::<usize>().expect("Couldn't parse integer!")
+    } else {
+        0
+    };
+
+    start_game(difficulty);
 }
 
-fn start_game() {
+fn start_game(difficulty: usize) {
     // Get wordlist from file and split into vector
     let contents = fs::read_to_string("wordlist.txt").expect("Could not read file!");
-    let words = match get_words(&contents) {
+    let words = match get_words(&contents, difficulty) {
         Ok(words) => words,
         _error => {
             eprintln!("Could not get words from wordlist.txt");
@@ -34,12 +42,14 @@ fn start_game() {
     }
 }
 
-fn get_words<'a>(contents: &'a String) -> Result<Vec<&'a str>, Box<dyn Error>> {
+fn get_words<'a>(contents: &'a String, difficulty: usize) -> Result<Vec<&'a str>, Box<dyn Error>> {
     let mut words = Vec::new();
     let mut rng = rand::thread_rng();
 
     for line in contents.lines() {
-        words.push(line);
+        if difficulty <= 0 || line.len() <= difficulty {
+            words.push(line);
+        }
     }
     words.shuffle(&mut rng);
 
