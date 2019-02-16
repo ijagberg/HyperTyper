@@ -75,7 +75,7 @@ fn run(words: Vec<&str>) -> Result<(), io::Error> {
     }
     let mut next_word_index = 3;
 
-    while timer.elapsed().as_secs() < 15 && next_word_index < words.len() - 1 {
+    while written_words < 30 && next_word_index < words.len() - 1 {
         println!(
             "{} ::: {} ::: {}",
             display_words[0], display_words[1], display_words[2]
@@ -93,7 +93,8 @@ fn run(words: Vec<&str>) -> Result<(), io::Error> {
             }
         }
     }
-    println!("Time: {}, words: {}", timer.elapsed().as_secs(), written_words);
+    let elapsed = timer.elapsed();
+    println!("Time: {}.{}s", elapsed.as_secs(), elapsed.subsec_millis());
 
     Ok(())
 }
