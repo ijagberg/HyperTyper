@@ -1,4 +1,5 @@
 use rand::prelude::*;
+use std::collections::VecDeque;
 use std::error::Error;
 use std::fs;
 use std::io;
@@ -69,9 +70,9 @@ fn run(words: Vec<&str>) -> Result<(), io::Error> {
     let mut user_input = String::new();
 
     // Add the first three words
-    let mut display_words: [&str; 3] = [""; 3];
+    let mut display_words: VecDeque<&str> = VecDeque::new();
     for i in 0..=2 {
-        display_words[i] = words[i];
+        display_words.push_back(words[i]);
     }
     let mut next_word_index = 3;
 
@@ -84,13 +85,16 @@ fn run(words: Vec<&str>) -> Result<(), io::Error> {
         io::stdin().read_line(&mut user_input)?;
         user_input = user_input.trim().to_string();
 
-        // Check if display_words contains user_input
-        for i in 0..display_words.len() {
-            if display_words[i].eq(&user_input) {
-                written_words += 1;
-                display_words[i] = words[next_word_index];
-                next_word_index += 1;
+        match display_words.front() {
+            Some(front_string) => {
+                if front_string.eq(&user_input) {
+                    written_words += 1;
+                    display_words.pop_front();
+                    display_words.push_back(words[next_word_index]);
+                    next_word_index += 1;
+                }
             }
+            None => {}
         }
     }
     let elapsed = timer.elapsed();
