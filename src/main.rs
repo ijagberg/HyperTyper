@@ -59,17 +59,15 @@ fn get_words<'a>(contents: &'a String, difficulty: usize) -> Result<Vec<&'a str>
 fn print_countdown() -> Result<(), Box<Error>> {
     println!("Welcome to HyperTyper!");
 
-    let one_second = time::Duration::from_secs(1);
     let mut seconds_left = 3;
-
     while seconds_left > 0 {
         print!("\rStarting in... {}", seconds_left);
         io::stdout().flush()?;
-        thread::sleep(one_second);
+        thread::sleep(time::Duration::from_secs(1));
         seconds_left -= 1;
     }
     println!("\rGo!                      ");
-    thread::sleep(one_second);
+    thread::sleep(time::Duration::from_secs(1));
 
     Ok(())
 }
