@@ -1,6 +1,7 @@
+extern crate clap;
+use clap::{App, Arg};
 use rand::prelude::*;
 use std::collections::VecDeque;
-use std::env;
 use std::error::Error;
 use std::fs;
 use std::io;
@@ -13,14 +14,31 @@ struct Config {
 
 fn main() {
     // Handle command line stuff
-    let args: Vec<_> = env::args().collect();
-    let difficulty = if args.len() > 1 {
-        args[1].parse::<usize>().expect("Couldn't parse integer!")
-    } else {
-        0
-    };
+    let matches = App::new("HyperTyper")
+        .version("1.0")
+        .author("Isak Jägberg <ijagberg@gmail.com>")
+        .about("Simple command line typing game")
+        .arg(
+            Arg::with_name("difficulty")
+                .short("d")
+                .long("difficulty")
+                .value_name("INTEGER")
+                .help("Sets maximum length of words to display")
+                .takes_value(true),
+        )
+        .get_matches();
 
-    let config = Config { difficulty };
+    let config = Config {
+        difficulty: match matches.value_of("difficulty") {
+            Some(d) => d
+                .parse::<usize>()
+                .expect("Could not parse value of difficulty"),
+            None => {
+                println!("Default value of difficulty: 0");
+                0
+            }
+        },
+    };
 
     start_game(&config);
 }
