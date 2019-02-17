@@ -10,6 +10,7 @@ use std::{thread, time};
 
 struct Config {
     difficulty: usize,
+    username: String,
 }
 
 fn main() {
@@ -26,6 +27,14 @@ fn main() {
                 .help("Sets maximum length of words to display")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("username")
+                .short("u")
+                .long("username")
+                .value_name("USERNAME")
+                .help("Sets username to display with scores")
+                .takes_value(true),
+        )
         .get_matches();
 
     let config = Config {
@@ -33,10 +42,11 @@ fn main() {
             Some(d) => d
                 .parse::<usize>()
                 .expect("Could not parse value of difficulty"),
-            None => {
-                println!("Default value of difficulty: 0");
-                0
-            }
+            None => 0,
+        },
+        username: match matches.value_of("username") {
+            Some(u) => u.to_string(),
+            None => String::from(""),
         },
     };
 
@@ -58,11 +68,13 @@ fn start_game(config: &Config) {
     print_countdown().expect("Could not print countdown message");
 
     match run(words) {
-        Ok(_) => return,
-        _error => {
-            eprintln!("Some error occurred!");
-            return;
-        }
+        Ok(elapsed) => println!(
+            "Time: {}.{}s for Username: {}",
+            elapsed.as_secs(),
+            elapsed.subsec_millis(),
+            config.username
+        ),
+        _error => eprintln!("Some error occurred!"),
     }
 }
 
@@ -96,7 +108,7 @@ fn print_countdown() -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn run(words: Vec<&str>) -> Result<(), io::Error> {
+fn run(words: Vec<&str>) -> Result<std::time::Duration, io::Error> {
     let mut written_words = 0;
     let timer = time::Instant::now();
     let mut user_input = String::new();
@@ -130,7 +142,6 @@ fn run(words: Vec<&str>) -> Result<(), io::Error> {
         }
     }
     let elapsed = timer.elapsed();
-    println!("Time: {}.{}s", elapsed.as_secs(), elapsed.subsec_millis());
 
-    Ok(())
+    Ok(elapsed)
 }
