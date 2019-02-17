@@ -7,6 +7,10 @@ use std::io;
 use std::io::Write;
 use std::{thread, time};
 
+struct Config {
+    difficulty: usize,
+}
+
 fn main() {
     // Handle command line stuff
     let args: Vec<_> = env::args().collect();
@@ -16,13 +20,15 @@ fn main() {
         0
     };
 
-    start_game(difficulty);
+    let config = Config { difficulty };
+
+    start_game(&config);
 }
 
-fn start_game(difficulty: usize) {
+fn start_game(config: &Config) {
     // Get wordlist from file and split into vector
     let contents = fs::read_to_string("wordlist.txt").expect("Could not read file!");
-    let words = match get_words(&contents, difficulty) {
+    let words = match get_words(&contents, &config) {
         Ok(words) => words,
         _error => {
             eprintln!("Could not get words from wordlist.txt");
@@ -42,12 +48,12 @@ fn start_game(difficulty: usize) {
     }
 }
 
-fn get_words<'a>(contents: &'a String, difficulty: usize) -> Result<Vec<&'a str>, Box<dyn Error>> {
+fn get_words<'a>(contents: &'a String, config: &Config) -> Result<Vec<&'a str>, Box<dyn Error>> {
     let mut words = Vec::new();
     let mut rng = rand::thread_rng();
 
     for line in contents.lines() {
-        if difficulty <= 0 || line.len() <= difficulty {
+        if config.difficulty <= 0 || line.len() <= config.difficulty {
             words.push(line);
         }
     }
