@@ -11,6 +11,7 @@ use std::{thread, time};
 struct Config {
     difficulty: usize,
     username: String,
+    word_count: usize,
 }
 
 fn main() {
@@ -23,7 +24,6 @@ fn main() {
             Arg::with_name("difficulty")
                 .short("d")
                 .long("difficulty")
-                .value_name("INTEGER")
                 .help("Sets maximum length of words to display")
                 .takes_value(true),
         )
@@ -31,8 +31,14 @@ fn main() {
             Arg::with_name("username")
                 .short("u")
                 .long("username")
-                .value_name("USERNAME")
                 .help("Sets username to display with scores")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("word-count")
+                .short("w")
+                .long("word-count")
+                .help("Sets the number of words to type in one round")
                 .takes_value(true),
         )
         .get_matches();
@@ -41,12 +47,18 @@ fn main() {
         difficulty: match matches.value_of("difficulty") {
             Some(d) => d
                 .parse::<usize>()
-                .expect("Could not parse value of difficulty"),
+                .expect("Could not parse integer value of argument difficulty (-d)"),
             None => 0,
         },
         username: match matches.value_of("username") {
             Some(u) => u.to_string(),
             None => String::from(""),
+        },
+        word_count: match matches.value_of("word-count") {
+            Some(w) => w
+                .parse::<usize>()
+                .expect("Could not parse integer value of argument word-count (-w)"),
+            None => 15,
         },
     };
 
@@ -67,14 +79,15 @@ fn start_game(config: &Config) {
     // Print welcoming message and countdown
     print_countdown().expect("Could not print countdown message");
 
-    match run(words) {
-        Ok(elapsed) => println!(
-            "Time: {}.{}s for Username: {}",
-            elapsed.as_secs(),
-            elapsed.subsec_millis(),
-            config.username
-        ),
-        _error => eprintln!("Some error occurred!"),
+    match run(&config, words) {
+        Ok(elapsed) => {
+            if config.username.len() == 0 {
+                println!("Time: {:?}", elapsed);
+            } else {
+                println!("Time: {:?} for user: {}", elapsed, config.username);
+            }
+        }
+        Err(_) => eprintln!("Some error occurred!"),
     }
 }
 
@@ -108,7 +121,7 @@ fn print_countdown() -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn run(words: Vec<&str>) -> Result<std::time::Duration, io::Error> {
+fn run(config: &Config, words: Vec<&str>) -> Result<std::time::Duration, io::Error> {
     let mut written_words = 0;
     let timer = time::Instant::now();
     let mut user_input = String::new();
@@ -120,7 +133,7 @@ fn run(words: Vec<&str>) -> Result<std::time::Duration, io::Error> {
     }
     let mut next_word_index = 3;
 
-    while written_words < 30 && next_word_index < words.len() - 1 {
+    while written_words < config.word_count && next_word_index < words.len() - 1 {
         println!(
             "{} ::: {} ::: {}",
             display_words[0], display_words[1], display_words[2]
