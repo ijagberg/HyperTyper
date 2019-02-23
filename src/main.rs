@@ -78,12 +78,12 @@ fn start_game(config: &Config) {
     }
 }
 
-fn get_words<'a>(contents: &'a String, config: &Config) -> Result<Vec<&'a str>, Box<dyn Error>> {
+fn get_words<'a>(contents: &'a str, config: &Config) -> Result<Vec<&'a str>, Box<dyn Error>> {
     let mut words = Vec::new();
     let mut rng = rand::thread_rng();
 
     for line in contents.lines() {
-        if config.difficulty <= 0 || line.len() <= config.difficulty {
+        if config.difficulty == 0 || line.len() <= config.difficulty {
             words.push(line);
         }
     }
@@ -115,8 +115,8 @@ fn run(words: Vec<&str>) -> Result<std::time::Duration, io::Error> {
 
     // Add the first three words
     let mut display_words: VecDeque<&str> = VecDeque::new();
-    for i in 0..=2 {
-        display_words.push_back(words[i]);
+    for word in words.iter().take(3) {
+        display_words.push_back(word);
     }
     let mut next_word_index = 3;
 
@@ -129,16 +129,13 @@ fn run(words: Vec<&str>) -> Result<std::time::Duration, io::Error> {
         io::stdin().read_line(&mut user_input)?;
         user_input = user_input.trim().to_string();
 
-        match display_words.front() {
-            Some(front_string) => {
-                if front_string.eq(&user_input) {
-                    written_words += 1;
-                    display_words.pop_front();
-                    display_words.push_back(words[next_word_index]);
-                    next_word_index += 1;
-                }
+        if let Some(front_string) = display_words.front() {
+            if front_string.eq(&user_input) {
+                written_words += 1;
+                display_words.pop_front();
+                display_words.push_back(words[next_word_index]);
+                next_word_index += 1;
             }
-            None => {}
         }
     }
     let elapsed = timer.elapsed();
