@@ -1,17 +1,18 @@
 extern crate clap;
 use clap::{App, Arg};
 use rand::prelude::*;
-use std::collections::VecDeque;
 use std::error::Error;
 use std::fs;
 use std::io;
 use std::io::Write;
+use std::path::PathBuf;
 use std::{thread, time};
 
 struct Config {
     difficulty: usize,
     username: String,
     word_count: usize,
+    word_list_file: PathBuf,
 }
 
 fn main() {
@@ -41,6 +42,13 @@ fn main() {
                 .help("Sets the number of words to type in one round")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("word-list-file")
+                .long("word-list-file")
+                .help("File containing a custom word list")
+                .takes_value(true)
+                .required(false),
+        )
         .get_matches();
 
     let config = Config {
@@ -60,18 +68,41 @@ fn main() {
                 .expect("Could not parse integer value of argument word-count (-w)"),
             None => 15,
         },
+        word_list_file: match matches.value_of("word-list-file") {
+            Some(path_string) => PathBuf::from(path_string),
+            None => {
+                let mut path = PathBuf::new();
+                path.push("wordlist.txt");
+                path
+            }
+        },
     };
 
-    start_game(&config);
+    start_game(config);
 }
 
-fn start_game(config: &Config) {
+fn start_game(config: Config) {
     // Get wordlist from file and split into vector
-    let contents = fs::read_to_string("wordlist.txt").expect("Could not read file!");
+    let contents = fs::read_to_string(&config.word_list_file).expect("Could not read file!");
     let words = match get_words(&contents, &config) {
-        Ok(words) => words,
+        Ok(words) => {
+            if words.len() >= 3 {
+                words
+            } else {
+                eprintln!(
+                    "Fewer than three (3) words in file {}/{}",
+                    &config.word_list_file.parent().unwrap().to_str().unwrap(),
+                    &config.word_list_file.file_name().unwrap().to_str().unwrap(),
+                );
+                return;
+            }
+        }
         _error => {
-            eprintln!("Could not get words from wordlist.txt");
+            eprintln!(
+                "Could not get words from {}/{}",
+                &config.word_list_file.parent().unwrap().to_str().unwrap(),
+                &config.word_list_file.file_name().unwrap().to_str().unwrap(),
+            );
             return;
         }
     };
@@ -127,27 +158,29 @@ fn run(config: &Config, words: Vec<&str>) -> Result<std::time::Duration, io::Err
     let mut user_input = String::new();
 
     // Add the first three words
-    let mut display_words: VecDeque<&str> = VecDeque::new();
-    for word in words.iter().take(3) {
-        display_words.push_back(word);
+    let mut display_words: [&str; 3] = ["", "", ""];
+    for i in 0..=2 {
+        display_words[i] = words[i];
     }
+
     let mut next_word_index = 3;
 
     while written_words < config.word_count && next_word_index < words.len() - 1 {
         println!(
-            "{} ::: {} ::: {}",
+            "##### \n{} \n{} \n{} \n#####",
             display_words[0], display_words[1], display_words[2]
         );
         user_input.clear();
         io::stdin().read_line(&mut user_input)?;
         user_input = user_input.trim().to_string();
 
-        if let Some(front_string) = display_words.front() {
-            if front_string.eq(&user_input) {
+        // iterate over display words to check for a match
+        for (index, display_word) in display_words.iter().enumerate() {
+            if display_word.eq(&user_input) {
                 written_words += 1;
-                display_words.pop_front();
-                display_words.push_back(words[next_word_index]);
+                display_words[index] = words[next_word_index];
                 next_word_index += 1;
+                break;
             }
         }
     }
