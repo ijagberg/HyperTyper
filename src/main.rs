@@ -13,6 +13,7 @@ struct Config {
     username: String,
     word_count: usize,
     word_list_file: PathBuf,
+    display_words_count: usize,
 }
 
 fn main() {
@@ -49,6 +50,12 @@ fn main() {
                 .takes_value(true)
                 .required(false),
         )
+        .arg(
+            Arg::with_name("display-words-count")
+                .long("display-words-count")
+                .help("Number of words to display")
+                .takes_value(true),
+        )
         .get_matches();
 
     let config = Config {
@@ -76,6 +83,12 @@ fn main() {
                 path
             }
         },
+        display_words_count: match matches.value_of("display-words-count") {
+            Some(i) => i
+                .parse::<usize>()
+                .expect("Could not parse integer value of argument display-words-count"),
+            None => 3,
+        },
     };
 
     start_game(config);
@@ -86,13 +99,14 @@ fn start_game(config: Config) {
     let contents = fs::read_to_string(&config.word_list_file).expect("Could not read file!");
     let words = match get_words(&contents, &config) {
         Ok(words) => {
-            if words.len() >= 3 {
+            if words.len() >= config.display_words_count {
                 words
             } else {
                 eprintln!(
-                    "Fewer than three (3) words in file {}/{}",
-                    &config.word_list_file.parent().unwrap().to_str().unwrap(),
-                    &config.word_list_file.file_name().unwrap().to_str().unwrap(),
+                    "Fewer than {} words in file {}/{}",
+                    config.display_words_count,
+                    config.word_list_file.parent().unwrap().to_str().unwrap(),
+                    config.word_list_file.file_name().unwrap().to_str().unwrap(),
                 );
                 return;
             }
@@ -100,8 +114,8 @@ fn start_game(config: Config) {
         _error => {
             eprintln!(
                 "Could not get words from {}/{}",
-                &config.word_list_file.parent().unwrap().to_str().unwrap(),
-                &config.word_list_file.file_name().unwrap().to_str().unwrap(),
+                config.word_list_file.parent().unwrap().to_str().unwrap(),
+                config.word_list_file.file_name().unwrap().to_str().unwrap(),
             );
             return;
         }
@@ -112,7 +126,7 @@ fn start_game(config: Config) {
 
     match run(&config, words) {
         Ok(elapsed) => {
-            if config.username.len() == 0 {
+            if config.username.is_empty() {
                 println!("Time: {:?}", elapsed);
             } else {
                 println!("Time: {:?} for user: {}", elapsed, config.username);
@@ -152,24 +166,28 @@ fn print_countdown() -> Result<(), Box<Error>> {
     Ok(())
 }
 
+fn print_display_words(display_words: &Vec<&str>) {
+    println!("#####");
+    for display_word in display_words {
+        println!("{}", display_word);
+    }
+    println!("#####");
+}
+
 fn run(config: &Config, words: Vec<&str>) -> Result<std::time::Duration, io::Error> {
     let mut written_words = 0;
-    let timer = time::Instant::now();
     let mut user_input = String::new();
 
     // Add the first three words
-    let mut display_words: [&str; 3] = ["", "", ""];
-    for i in 0..=2 {
-        display_words[i] = words[i];
-    }
+    let mut display_words = vec![""; config.display_words_count];
+    display_words.clone_from_slice(&words[..config.display_words_count]);
 
-    let mut next_word_index = 3;
+    let mut next_word_index = config.display_words_count + 1;
 
+    let timer = time::Instant::now();
     while written_words < config.word_count && next_word_index < words.len() - 1 {
-        println!(
-            "##### \n{} \n{} \n{} \n#####",
-            display_words[0], display_words[1], display_words[2]
-        );
+        print_display_words(&display_words);
+
         user_input.clear();
         io::stdin().read_line(&mut user_input)?;
         user_input = user_input.trim().to_string();
