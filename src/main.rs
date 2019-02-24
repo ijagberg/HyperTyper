@@ -194,7 +194,7 @@ fn run(config: &Config, words: Vec<&str>) -> Result<std::time::Duration, io::Err
 
         // iterate over display words to check for a match
         for (index, display_word) in display_words.iter().enumerate() {
-            if display_word.eq(&user_input) {
+            if display_word == &user_input {
                 written_words += 1;
                 display_words[index] = words[next_word_index];
                 next_word_index += 1;
