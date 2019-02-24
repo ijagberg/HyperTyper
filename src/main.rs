@@ -166,7 +166,7 @@ fn print_countdown() -> Result<(), Box<Error>> {
     Ok(())
 }
 
-fn print_display_words(display_words: &Vec<&str>) {
+fn print_display_words(display_words: &[&str]) {
     println!("#####");
     for display_word in display_words {
         println!("{}", display_word);
