@@ -189,6 +189,9 @@ fn print_countdown() -> Result<(), Box<Error>> {
 }
 
 fn print_display_words(display_words: &[&str]) {
+    println!();
+    println!();
+    println!();
     println!("#####");
     for display_word in display_words {
         println!("{}", display_word);
