@@ -8,6 +8,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::{thread, time};
 
+#[derive(Debug)]
 struct Config {
     difficulty: usize,
     username: String,
@@ -60,9 +61,12 @@ fn main() {
 
     let config = Config {
         difficulty: match matches.value_of("difficulty") {
-            Some(d) => d
-                .parse::<usize>()
-                .expect("Could not parse integer value of argument difficulty (-d)"),
+            Some(d) => {
+                let value = d
+                    .parse::<usize>()
+                    .expect("Could not parse integer value of argument difficulty (-d)");
+                value_between(value as i64, 0, 999) as usize
+            }
             None => 0,
         },
         username: match matches.value_of("username") {
@@ -70,9 +74,12 @@ fn main() {
             None => String::from(""),
         },
         word_count: match matches.value_of("word-count") {
-            Some(w) => w
-                .parse::<usize>()
-                .expect("Could not parse integer value of argument word-count (-w)"),
+            Some(w) => {
+                let value = w
+                    .parse::<usize>()
+                    .expect("Could not parse integer value of argument word-count (-w)");
+                value_between(value as i64, 1, 100) as usize
+            }
             None => 15,
         },
         word_list_file: match matches.value_of("word-list-file") {
@@ -84,12 +91,17 @@ fn main() {
             }
         },
         display_words_count: match matches.value_of("display-words-count") {
-            Some(i) => i
-                .parse::<usize>()
-                .expect("Could not parse integer value of argument display-words-count"),
+            Some(i) => {
+                let value = i
+                    .parse::<usize>()
+                    .expect("Could not parse integer value of argument display-words-count");
+                value_between(value as i64, 3, 10) as usize
+            }
             None => 3,
         },
     };
+
+    println!("{:?}", config);
 
     start_game(config);
 }
@@ -133,6 +145,16 @@ fn start_game(config: Config) {
             }
         }
         Err(_) => eprintln!("Some error occurred!"),
+    }
+}
+
+fn value_between(value: i64, min_value: i64, max_value: i64) -> i64 {
+    if value < min_value {
+        min_value
+    } else if value > max_value {
+        max_value
+    } else {
+        value
     }
 }
 
